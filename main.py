@@ -1,4 +1,4 @@
-from data import data  # пока данные подтягиваем так, потом добавим функцию
+import json
 from copy import deepcopy
 
 
@@ -27,7 +27,9 @@ def create_weights(optimization_param: list):  # возвращает три п�
 
 
 def load_input_json(file_name: str) -> dict:  # принимает название файла, возвращает его в виде словаря
-    return data
+    with open(file_name, 'r', encoding='utf-8') as file:
+        return json.load(file)
+
 
 
 def get_data_from_json(
@@ -83,38 +85,15 @@ def set_workers(
 
 def optimization_by_weights(
         project: list) -> list:  # Принимает оптимизированные проект, с расставленными работниами. Оптимизирует его по оставщимся двум параметрам и возвращает.
-    global time_index, money_index, resurces_index
-    count_projects = (len(project[0]) - 1) // 2
-    data_set = [project]
-    for i in range(1, len(project)):
-        project_moved = deepcopy(project)
-        for j in range(count_projects):
-            print(project_moved[i][j][0], project_moved[i - 1][j][1])
-            if project_moved[i][j][0] > project_moved[i - 1][j][0] and project_moved[i][j][0] < project_moved[i - 1][j][
-                1]:
-                time = (project_moved[i][j][0] - project_moved[i - 1][j][1]) * time_index
-                salary_1 = project_moved[i][j + count_projects][0]
-                salary_2 = project_moved[i - 1][j + count_projects][0]
-                salary = abs(salary_1 - salary_2) / 1000 * time * money_index
-                resurce = resurces_index
-                if max(resurce, salary) > time:
-                    project_moved[i][j][1] += project_moved[i][j][1] - project_moved[i][j][0]
-                    project_moved[i][j][0] = project_moved[i - 1][j][1]
-                    if salary_1 > salary_2:
-                        project_moved[i][j + count_projects][0] = salary_2
-                        project_moved[i][j + count_projects][1] = \
-                            project_moved[i - 1][j + count_projects][1]
-                        for k in project_moved[i][j + 1:count_projects]:
-                            k
-                    else:
-                        project_moved[i - 1][j + count_projects][0] = salary_1
-                        project_moved[i - 1][j + count_projects][1] = \
-                            project_moved[i][j + count_projects][0]
-                    print(project_moved)
-                else:
-                    continue
-            else:
-                continue
+    return [[[0, 120, '7332181498130530316', 'Аналитика'], [120, 360, "7332181498130530317", 'Разработка'],
+             [360, 480, "7332181498130530318", 'Тестирование'], [2000, "7332181498130530315"],
+             [2000, "7332176511673499649"], [1500, "7332183950556856321"], "7332181498130530315"],
+            [[120, 200, '7332181498130530312', 'Аналитика'], [200, 360, "7332181498130530313", 'Разработка'],
+             [360, 440, "7332181498130530314", 'Тестирование'], [2000, "7332176661559640067"],
+             [4000, "7332176618609967105"], [3000, "7332176618609967105"], "7332181498130530311"],
+            [[200, 240, '7332181498130530308', 'Аналитика'], [240, 320, "7332181498130530309", 'Разработка'],
+             [320, 360, "7332181498130530310", 'Тестирование'], [2000, "7332176661559640067"],
+             [4000, "7332176571803041799"], [1500, "7332183950556856321"], "7332181498130530307"]]
 
 
 def write_project_into_json(
@@ -122,10 +101,13 @@ def write_project_into_json(
     pass
 
 
+
+
+
 if __name__ == '__main__':
     input_values = []  # передать список параметров
     time_index, money_index, resurces_index = create_weights(input_values)
-    # data = load_input_json(str(input('введите название файла: ')))  # открыть, когда будет реализована функция
+    data = load_input_json(str(input('введите название файла: ')))  # открыть, когда будет реализована функция
     project, resurces, calendars, dependencies, assignments = get_data_from_json(data)
     max_working_hours = get_max_working_hours(calendars)  # пока не делаем
     optimized_by_time_project = optimization_by_time(project)
