@@ -3,7 +3,27 @@ from copy import deepcopy
 
 
 def create_weights(optimization_param: list):  # возвращает три переменные - веса. В порядке - время, деньги, ресурсы
-    return 2, 1, 0.5
+    dict_of_params = {'time': 0, 'money': 0, 'resource': 0}
+
+    if not(0 < len(optimization_param) < 4):
+        raise Exception('incorrect input data format')
+    for temp in optimization_param:
+        if temp not in dict_of_params:
+            raise Exception('incorrect input data format')
+    if not(len(optimization_param) == len(set(optimization_param))):
+        raise Exception('incorrect input data format')
+
+    if len(optimization_param) == 1:
+        dict_of_params[optimization_param[0]] = 2 # коэффициент для значения, по которому идет оптимизация, в случае если передали одно значение
+    if len(optimization_param) == 2:
+        dict_of_params[optimization_param[0]] = 1.5 # коэффициент для 1-го значения, по которому идет оптимизация, в случае если передали два значения
+        dict_of_params[optimization_param[1]] = 0.5 # коэффициент для 2-го значения, по которому идет оптимизация, в случае если передали два значения
+    if len(optimization_param) == 3:
+        dict_of_params[optimization_param[0]] = 1 # коэффициент для 1-го значения, по которому идет оптимизация, в случае если передали три значения
+        dict_of_params[optimization_param[1]] = 0.6 # коэффициент для 2-го значения, по которому идет оптимизация, в случае если передали три значения
+        dict_of_params[optimization_param[2]] = 0.4 # коэффициент для 3-го значения, по которому идет оптимизация, в случае если передали три значения
+
+    return dict_of_params['time'], dict_of_params['money'], dict_of_params['resource']
 
 
 def load_input_json(file_name: str) -> dict:  # принимает название файла, возвращает его в виде словаря
