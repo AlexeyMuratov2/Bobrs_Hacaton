@@ -1,8 +1,5 @@
 import json
 
-with open('data_json.json', 'r', encoding='utf-8') as file:
-    data = json.load(file)
-
 
 def create_weights(optimization_param: list):  # возвращает три переменные - веса. В порядке - время, деньги, ресурсы
     dict_of_params = {'time': 0, 'money': 0, 'resource': 0}
@@ -29,6 +26,9 @@ def create_weights(optimization_param: list):  # возвращает три п�
 
 
 def load_input_json(file_name: str) -> dict:  # принимает название файла, возвращает его в виде словаря
+    with open(file_name, 'r', encoding='utf-8') as file:
+        data = json.load(file)
+
     return data
 
 
