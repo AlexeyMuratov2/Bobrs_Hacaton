@@ -1,4 +1,4 @@
-from data import data  # пока данные подтягиваем так, потом добавим функцию
+import json
 
 
 def create_weights(optimization_param: list):  # возвращает три переменные - веса. В порядке - время, деньги, ресурсы
@@ -26,6 +26,9 @@ def create_weights(optimization_param: list):  # возвращает три п�
 
 
 def load_input_json(file_name: str) -> dict:  # принимает название файла, возвращает его в виде словаря
+    with open(file_name, 'r', encoding='utf-8') as file:
+        return json.load(file)
+
     return data
 
 
@@ -102,7 +105,7 @@ def write_project_into_json(
 
 
 if __name__ == '__main__':
-    input_values = []  # передать список параметров
+    input_values = ['money']  # передать список параметров
     time_index, money_index, resurces_index = create_weights(input_values)
     data = load_input_json(str(input('введите название файла: ')))  # открыть, когда будет реализована функция
     project, resurces, calendars, dependencies, assignments = get_data_from_json(data)
