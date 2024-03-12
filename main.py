@@ -27,7 +27,7 @@ def create_weights(optimization_param: list):  # возвращает три п�
 
 
 def load_input_json(file_name: str) -> dict:  # принимает название файла, возвращает его в виде словаря
-    with open(file_name, 'r', encoding='utf-8') as file:
+    with open('data_json.json', 'r', encoding='utf-8') as file:
         return json.load(file)
 
 
@@ -48,8 +48,10 @@ def get_data_from_json(
                {"projectRoleId": "developer", 'salary': 2000, "id": "7332176511673499649"},
                {"projectRoleId": "developer", 'salary': 3000, "id": "7332176618609967105"},
                {"projectRoleId": "analyst", 'salary': 2000, "id": "7332176661559640067"},
-               {"projectRoleId": "developer", 'salary': 4000, "id": "7332176571803041799"}], data['calendars'], data[
-               'dependencies'], data['assignments']
+               {"projectRoleId": "developer", 'salary': 4000, "id": "7332176571803041799"}], data['calendars'], {
+               "7332181498130530308": '7332181498130530309', '7332181498130530309': '7332181498130530310',
+               '7332181498130530312': '7332181498130530313', '7332181498130530313': '7332181498130530314',
+               '7332181498130530316': '7332181498130530317', '7332181498130530317': '7332181498130530318'}, data['assignments']
 
 
 def get_max_working_hours(
@@ -85,15 +87,43 @@ def set_workers(
 
 def optimization_by_weights(
         project: list) -> list:  # Принимает оптимизированные проект, с расставленными работниами. Оптимизирует его по оставщимся двум параметрам и возвращает.
-    return [[[0, 120, '7332181498130530316', 'Аналитика'], [120, 360, "7332181498130530317", 'Разработка'],
-             [360, 480, "7332181498130530318", 'Тестирование'], [2000, "7332181498130530315"],
-             [2000, "7332176511673499649"], [1500, "7332183950556856321"], "7332181498130530315"],
-            [[120, 200, '7332181498130530312', 'Аналитика'], [200, 360, "7332181498130530313", 'Разработка'],
-             [360, 440, "7332181498130530314", 'Тестирование'], [2000, "7332176661559640067"],
-             [4000, "7332176618609967105"], [3000, "7332176618609967105"], "7332181498130530311"],
-            [[200, 240, '7332181498130530308', 'Аналитика'], [240, 320, "7332181498130530309", 'Разработка'],
-             [320, 360, "7332181498130530310", 'Тестирование'], [2000, "7332176661559640067"],
-             [4000, "7332176571803041799"], [1500, "7332183950556856321"], "7332181498130530307"]]
+    global time_index, money_index, resurces_index, dependencies
+    count_projects = (len(project[0]) - 1) // 2
+    data_set = [project]
+    for i in range(1, len(project)):
+        project_moved = deepcopy(project)
+        for j in range(count_projects):
+            print(project_moved[i][j][0], project_moved[i - 1][j][1])
+            if project_moved[i][j][0] > project_moved[i - 1][j][0] and project_moved[i][j][0] < project_moved[i - 1][j][
+                1]:
+                time = abs(project_moved[i][j][0] - project_moved[i - 1][j][1]) * time_index
+                time_dif = abs(project_moved[i][j][0] - project_moved[i - 1][j][1])
+                salary_1 = project_moved[i][j + count_projects][0]
+                salary_2 = project_moved[i - 1][j + count_projects][0]
+                salary = abs(salary_1 - salary_2) / 1000 * time_dif * money_index
+                resurce = resurces_index
+                task_id = project_moved[i][j][2]
+                if max(resurce, salary) > time:
+                    project_moved[i][j][1] += project_moved[i][j][1] - project_moved[i][j][0]
+                    project_moved[i][j][0] = project_moved[i - 1][j][1]
+                    if salary_1 > salary_2:
+                        project_moved[i][j + count_projects][0] = salary_2
+                        project_moved[i][j + count_projects][1] = \
+                            project_moved[i - 1][j + count_projects][1]
+                        for k in project_moved[i][j + 1:count_projects]:
+                            print(task_id, dependencies)
+                            if task_id in dependencies:
+                                if dependencies[task_id] == k[2]:
+                                    print(k)
+                    else:
+                        project_moved[i - 1][j + count_projects][0] = salary_1
+                        project_moved[i - 1][j + count_projects][1] = \
+                            project_moved[i][j + count_projects][0]
+                    print(project_moved)
+                else:
+                    continue
+            else:
+                continue
 
 
 def write_project_into_json(
@@ -105,7 +135,7 @@ def write_project_into_json(
 
 
 if __name__ == '__main__':
-    input_values = []  # передать список параметров
+    input_values = ['money']  # передать список параметров
     time_index, money_index, resurces_index = create_weights(input_values)
     data = load_input_json(str(input('введите название файла: ')))  # открыть, когда будет реализована функция
     project, resurces, calendars, dependencies, assignments = get_data_from_json(data)
