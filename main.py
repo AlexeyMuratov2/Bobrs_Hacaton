@@ -1,4 +1,7 @@
-from data import data  # пока данные подтягиваем так, потом добавим функцию
+import json
+
+with open('data_json.json', 'r', encoding='utf-8') as file:
+    data = json.load(file)
 
 
 def create_weights(optimization_param: list):  # возвращает три переменные - веса. В порядке - время, деньги, ресурсы
