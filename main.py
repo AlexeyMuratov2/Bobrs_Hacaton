@@ -78,7 +78,10 @@ def write_project_into_json(
     pass
 
 
-def main():
+
+
+
+if __name__ == '__main__':
     input_values = []  # передать список параметров
     time_index, money_index, resurces_index = create_weights(input_values)
     data = load_input_json(str(input('введите название файла: ')))  # открыть, когда будет реализована функция
@@ -88,8 +91,3 @@ def main():
     optimized_by_time_and_money_project = set_workers(optimized_by_time_project)
     final_project = optimization_by_weights(optimized_by_time_and_money_project)
     write_project_into_json(final_project)
-    print(calendars)
-
-
-if __name__ == '__main__':
-    main()
