@@ -4,29 +4,35 @@ import json
 def create_weights(optimization_param: list):  # возвращает три переменные - веса. В порядке - время, деньги, ресурсы
     dict_of_params = {'time': 0, 'money': 0, 'resource': 0}
 
-    if not(0 < len(optimization_param) < 4):
+    if not (0 < len(optimization_param) < 4):
         raise Exception('incorrect input data format')
     for temp in optimization_param:
         if temp not in dict_of_params:
             raise Exception('incorrect input data format')
-    if not(len(optimization_param) == len(set(optimization_param))):
+    if not (len(optimization_param) == len(set(optimization_param))):
         raise Exception('incorrect input data format')
 
     if len(optimization_param) == 1:
-        dict_of_params[optimization_param[0]] = 2 # коэффициент для значения, по которому идет оптимизация, в случае если передали одно значение
+        dict_of_params[optimization_param[
+            0]] = 2  # коэффициент для значения, по которому идет оптимизация, в случае если передали одно значение
     if len(optimization_param) == 2:
-        dict_of_params[optimization_param[0]] = 1.5 # коэффициент для 1-го значения, по которому идет оптимизация, в случае если передали два значения
-        dict_of_params[optimization_param[1]] = 0.5 # коэффициент для 2-го значения, по которому идет оптимизация, в случае если передали два значения
+        dict_of_params[optimization_param[
+            0]] = 1.5  # коэффициент для 1-го значения, по которому идет оптимизация, в случае если передали два значения
+        dict_of_params[optimization_param[
+            1]] = 1  # коэффициент для 2-го значения, по которому идет оптимизация, в случае если передали два значения
     if len(optimization_param) == 3:
-        dict_of_params[optimization_param[0]] = 1 # коэффициент для 1-го значения, по которому идет оптимизация, в случае если передали три значения
-        dict_of_params[optimization_param[1]] = 0.6 # коэффициент для 2-го значения, по которому идет оптимизация, в случае если передали три значения
-        dict_of_params[optimization_param[2]] = 0.4 # коэффициент для 3-го значения, по которому идет оптимизация, в случае если передали три значения
+        dict_of_params[optimization_param[
+            0]] = 1  # коэффициент для 1-го значения, по которому идет оптимизация, в случае если передали три значения
+        dict_of_params[optimization_param[
+            1]] = 0.6  # коэффициент для 2-го значения, по которому идет оптимизация, в случае если передали три значения
+        dict_of_params[optimization_param[
+            2]] = 0.4  # коэффициент для 3-го значения, по которому идет оптимизация, в случае если передали три значения
 
     return dict_of_params['time'], dict_of_params['money'], dict_of_params['resource']
 
 
 def load_input_json(file_name: str) -> dict:  # принимает название файла, возвращает его в виде словаря
-    with open(file_name, 'r', encoding='utf-8') as file:
+    with open('data_json.json', 'r', encoding='utf-8') as file:
         return json.load(file)
 
     return data
@@ -48,8 +54,11 @@ def get_data_from_json(
                {"projectRoleId": "developer", 'salary': 2000, "id": "7332176511673499649"},
                {"projectRoleId": "developer", 'salary': 3000, "id": "7332176618609967105"},
                {"projectRoleId": "analyst", 'salary': 2000, "id": "7332176661559640067"},
-               {"projectRoleId": "developer", 'salary': 4000, "id": "7332176571803041799"}], data['calendars'], data[
-               'dependencies'], data['assignments']
+               {"projectRoleId": "developer", 'salary': 4000, "id": "7332176571803041799"}], data['calendars'], {
+               "7332181498130530308": '7332181498130530309', '7332181498130530309': '7332181498130530310',
+               '7332181498130530312': '7332181498130530313', '7332181498130530313': '7332181498130530314',
+               '7332181498130530316': '7332181498130530317', '7332181498130530317': '7332181498130530318'}, data[
+               'assignments']
 
 
 def get_max_working_hours(
@@ -99,9 +108,6 @@ def optimization_by_weights(
 def write_project_into_json(
         project: list) -> None:  # Принимает проект и записывает новые данные в словарь data. Записывает его в файл и выводит сообщением общие затраты, время и ресурсы.
     pass
-
-
-
 
 
 if __name__ == '__main__':
