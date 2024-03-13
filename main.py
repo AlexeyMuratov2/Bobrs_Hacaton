@@ -1,19 +1,22 @@
 import json
 import re
+from copy import deepcopy
 
-def create_weights(input_optimization_param: list):  # возвращает три переменные - веса. В порядке - деньги, ресурсы, время
+
+def create_weights(
+        input_optimization_param: str):  # возвращает три переменные - веса. В порядке - деньги, ресурсы, время
     dict_of_params = {'time': 0, 'money': 0, 'resource': 0}
     optimization_param = list(input_optimization_param.split())
     for i in range(len(optimization_param)):
-       try:
-          optimization_param[i] = float(optimization_param[i])
-       except:
-          pass
+        try:
+            optimization_param[i] = float(optimization_param[i])
+        except:
+            pass
 
     if not (0 < len(optimization_param) < 4):
         raise Exception('incorrect input data format')
     if not all(type(x) == type(optimization_param[0]) for x in optimization_param):
-         raise Exception('incorrect input data format')
+        raise Exception('incorrect input data format')
     for temp in optimization_param:
         if type(temp) == str:
             if temp not in dict_of_params or not (len(optimization_param) == len(set(optimization_param))):
@@ -39,74 +42,70 @@ def create_weights(input_optimization_param: list):  # возвращает тр
             2]] = 0.4  # коэффициент для 3-го значения, по которому идет оптимизация, в случае если передали три значения
     if all(type(x) == float for x in optimization_param):
         if len(optimization_param) == 3:
-           return optimization_param[0], optimization_param[1], optimization_param[2]
+            return optimization_param[0], optimization_param[1], optimization_param[2]
         else:
-           raise Exception('incorrect input data format')
-    
+            raise Exception('incorrect input data format')
 
     return dict_of_params['money'], dict_of_params['resource'], dict_of_params['time']
 
 
 def load_input_json(file_name: str) -> dict:  # принимает название файла, возвращает его в виде словаря
-    with open('data_json.json', 'r', encoding='utf-8') as file:
+    with open(file_name, 'r', encoding='utf-8') as file:
         return json.load(file)
 
-    return data
 
 def projects(list_projects):
+    list_of_proj = []
 
-  list_of_proj = []
+    for row in list_projects:
+        for values in row['rows']:
+            for child in values['children']:
+                for proj_data in child.keys():
 
-  for row in list_projects:
-    for values in row['rows']:
-      for child in values['children']:
-        for proj_data in child.keys():
+                    if proj_data == 'children':
 
-          if proj_data == 'children':
+                        for part_proj in child[proj_data]:
+                            parts_pr = []
+                            for items in part_proj.keys():
 
-            for part_proj in child[proj_data]:
-              parts_pr = []
-              for items in part_proj.keys():
+                                if items == 'name' or items == 'effort' or items == 'id' or items == 'parentId':
+                                    parts_pr.append(part_proj[items])
+                            list_of_proj.append(parts_pr)
 
-                if items == 'name' or items == 'effort' or items == 'id' or items == 'parentId':
-                  parts_pr.append(part_proj[items])
-              list_of_proj.append(parts_pr)
+    return list_of_proj
 
-
-  return list_of_proj
 
 def depend(list_depend):
+    depend_list = []
+    for line in list_depend:
+        if 'rows' in line:
+            for item in line['rows']:
+                depend = []
+                for key in item.keys():
+                    if key == 'from' or key == 'to':
+                        depend.append(item[key])
+                depend_list.append(depend)
+    return depend_list
 
-  depend_list = []
-  for line in list_depend:
-    if 'rows' in line:
-      for item in line['rows']:
-        depend = []
-        for key in item.keys():
-          if key == 'from' or key == 'to':
-            depend.append(item[key])
-        depend_list.append(depend)
-  return depend_list
 
 def resources(list_workers):
+    workers = []
 
-  workers = []
+    for line in list_workers:
+        if 'rows' in line:
+            for item in line['rows']:
+                worker = {}
+                for key in item.keys():
+                    if key == 'projectRoleId' or key == 'id':
+                        worker[key] = item[key]
+                    elif key == 'name':
+                        match = re.search(r'\((\d+)\D', str(item[key]))
 
-  for line in list_workers:
-    if 'rows' in line:
-      for item in line['rows']:
-        worker = {}
-        for key in item.keys():
-          if key == 'projectRoleId' or key == 'id':
-            worker[key] = item[key]
-          elif key == 'name':
-            match = re.search(r'\((\d+)\D', str(item[key]))
+                        if match:
+                            worker['salary'] = int(match.group(1))
 
-            if match:
-              worker['salary'] = int(match.group(1))
-
-        workers.append(worker)
-  return workers
+                workers.append(worker)
+    return workers
 
 
 def events_dis(list_events):
@@ -123,6 +122,7 @@ def events_dis(list_events):
                 events.append(event)
     return events
 
+
 def search_id(id, time, projects_final, depend_dict):
     for project in projects_final:
         for item in project:
@@ -136,6 +136,7 @@ def search_id(id, time, projects_final, depend_dict):
 
 def get_data_from_json(
         project_data: dict):  # принимает json в виде словаря. Возвращает данные о проекте, данные о сотрудниках, календарь, зависимости, связи задач и разработчиков. Именно в таком порядке
+
     list_projects = []
     list_people = []
     list_events = []
@@ -220,38 +221,10 @@ def get_data_from_json(
     return projects_final, list_people, dict_calendar, depend_dict, list_events_out
 
 
-
-
-    # return [[[0, 40, '7332181498130530308', 'Аналитика'], [40, 120, "7332181498130530309", 'Разработка'],
-    #          [120, 160, "7332181498130530310", 'Тестирование'], [2000, "7332176661559640067"],
-    #          [2000, "7332176511673499649"], [1500, "7332183950556856321"], "7332181498130530307"],
-    #         [[0, 80, '7332181498130530312', 'Аналитика'], [80, 240, "7332181498130530313", 'Разработка'],
-    #          [240, 320, "7332181498130530314", 'Тестирование'], [2000, "7332176661559640067"],
-    #          [4000, "7332176618609967105"], [3000, "7332176618609967105"], "7332181498130530311"],
-    #         [[0, 120, '7332181498130530308', 'Аналитика'], [120, 360, "7332181498130530309", 'Разработка'],
-    #          [360, 480, "7332181498130530310", 'Тестирование'], [2000, "7332176661559640067"],
-    #          [4000, "7332176571803041799"], [1500, "7332183950556856321"], "7332181498130530315"]], [
-    #            {"projectRoleId": "tester", 'salary': 1000, "id": "7332176730716831745"},
-    #            {"projectRoleId": "tester", 'salary': 1500, "id": "7332183950556856321"},
-    #            {"projectRoleId": "developer", 'salary': 2000, "id": "7332176511673499649"},
-    #            {"projectRoleId": "developer", 'salary': 3000, "id": "7332176618609967105"},
-    #            {"projectRoleId": "analyst", 'salary': 2000, "id": "7332176661559640067"},
-    #            {"projectRoleId": "developer", 'salary': 4000, "id": "7332176571803041799"}], data['calendars'], {
-    #            "7332181498130530308": '7332181498130530309', '7332181498130530309': '7332181498130530310',
-    #            '7332181498130530312': '7332181498130530313', '7332181498130530313': '7332181498130530314',
-    #            '7332181498130530316': '7332181498130530317', '7332181498130530317': '7332181498130530318'}, data[
-    #            'assignments']
-
-
-def get_max_working_hours(
-        calendar: dict) -> int:  # Принимает календарь, возвращает число - количество рабочих часов
-    return 1000000
-
-
 def optimization_by_time(
         project: list) -> list:  # Принимает данные о входном проект, оптимизирует их и возвращает (не вызывать, если вес time = 0)
     return [[[0, 120, '7332181498130530316', 'Аналитика'], [120, 360, "7332181498130530317", 'Разработка'],
-             [360, 480, "7332181498130530318", 'Тестирование'], [2000, "7332181498130530315"],
+             [360, 480, "7332181498130530318", 'Тестирование'], [2000, "7332176661559640067"],
              [2000, "7332176511673499649"], [1500, "7332183950556856321"], "7332181498130530315"],
             [[120, 200, '7332181498130530312', 'Аналитика'], [200, 360, "7332181498130530313", 'Разработка'],
              [360, 440, "7332181498130530314", 'Тестирование'], [2000, "7332176661559640067"],
@@ -263,28 +236,159 @@ def optimization_by_time(
 
 def set_workers(
         project: list) -> list:  # Приинимает проект, оптимизированные по времени. Назначает на него сотрудников, а именно расставляет в списке их зарплаты. Затем возвращает результат
-    return [[[0, 120, '7332181498130530316', 'Аналитика'], [120, 360, "7332181498130530317", 'Разработка'],
-             [360, 480, "7332181498130530318", 'Тестирование'], [2000, "7332181498130530315"],
-             [2000, "7332176511673499649"], [1500, "7332183950556856321"], "7332181498130530315"],
-            [[120, 200, '7332181498130530312', 'Аналитика'], [200, 360, "7332181498130530313", 'Разработка'],
-             [360, 440, "7332181498130530314", 'Тестирование'], [2000, "7332176661559640067"],
-             [4000, "7332176618609967105"], [3000, "7332176618609967105"], "7332181498130530311"],
-            [[200, 240, '7332181498130530308', 'Аналитика'], [240, 320, "7332181498130530309", 'Разработка'],
-             [320, 360, "7332181498130530310", 'Тестирование'], [2000, "7332176661559640067"],
-             [4000, "7332176571803041799"], [1500, "7332183950556856321"], "7332181498130530307"]]
+    dct_project = {'Аналитика': [], 'Тестирование': [], 'Разработка': []}
+    dct_resources = {'Аналитика': [], 'Тестирование': [], 'Разработка': []}
+
+    cnt = 0
+    res_project = []
+    project_id = []
+    res_dct = dict()
+    for i in project:
+        res_project.append([])
+        for j in i:
+            if len(j) == 4:
+                res_project[cnt].append(j)
+            if j[-1] in dct_project:
+                dct_project[j[-1]].append([j[1] - j[0], j[0], j[1], j[2]])
+                res_dct[j[2]] = 0
+        project_id.append(i[-1])
+        cnt += 1
+    for key in resurces:
+        if key['projectRoleId'] == 'tester':
+            key_dct = 'Тестирование'
+        elif key['projectRoleId'] == 'analyst':
+            key_dct = 'Аналитика'
+        else:
+            key_dct = 'Разработка'
+        dct_resources[key_dct].append([key['salary'], key['id']])
+    for keys in dct_resources:
+        dct_resources[keys] = sorted(dct_resources[keys], key=lambda x: x[0])[::-1]
+
+    for key, value in dct_project.items():
+        lst = sorted(value, key=lambda x: x[1])[::-1]
+        res_lst = []
+        while len(lst) > 0:
+            tmp_lst = []
+            tmp_lst.append([lst[0][0], lst[0].copy()])
+            for indx in range(1, len(lst)):
+                indx_for_max = -1
+                for indx_tmp in range(len(tmp_lst) - 1, -1, -1):
+                    if lst[indx][2] <= tmp_lst[indx_tmp][-1][1]:
+                        indx_for_max = indx_tmp
+                        break
+                if indx_for_max == -1:
+                    tmp_lst.append([lst[indx][0], lst[indx]])
+                else:
+                    maxi = max(tmp_lst[:indx_for_max + 1], key=lambda x: x[0]).copy()
+                    maxi[0] += lst[indx][0]
+                    maxi.append(lst[indx])
+                    tmp_lst.append(maxi.copy())
+            res_lst.append(max(tmp_lst, key=lambda x: x[0]).copy())
+            for i in res_lst[-1][1:]:
+                lst.remove(i)
+        res_lst = sorted(res_lst, key=lambda x: x[0])
+        cnt = 0
+        for i in res_lst:
+            for j in i[1:]:
+                res_dct[j[-1]] = dct_resources[key][cnt]
+            cnt += 1
+
+    for i in range(len(res_project)):
+        lenni = len(res_project[i])
+        for j in range(lenni):
+            res_project[i].append(res_dct[res_project[i][j][-2]])
+    for i in range(len(res_project)):
+        res_project[i].append(project_id[i])
+
+    return project
+
+
+def choose_best_project(projects_list: list):
+    global time_index, money_index, resurces_index
+    time_index_set = []
+    money_index_set = []
+    resurces_index_set = []
+    count_projects = len(projects_list[0])
+    for i in range(len(projects_list)):
+        money = 0
+        time = 0
+        resurces_set = set()
+        for j in range(count_projects):
+            for k in range((len(projects_list[i][j]) - 1) // 2):
+                money += (projects_list[i][j][k][1] - projects_list[i][j][k][0]) * \
+                         projects_list[i][j][k + count_projects][0]
+                time = max(time, projects_list[i][j][k][1])
+                resurces_set.add(projects_list[i][j][k + count_projects][1])
+        time_index_set.append(time)
+        money_index_set.append(money)
+        resurces_index_set.append(len(resurces_set))
+    best_option = 999999999999
+    best_option_id = 0
+    for i in range(len(time_index_set)):
+        index = (time_index_set[i] * time_index) + (money_index_set[i] * money_index) + (
+                    resurces_index_set[i] * 1000 * resurces_index)
+        if best_option > index:
+            best_option = index
+            best_option_id = i
+    return projects_list[best_option_id]
 
 
 def optimization_by_weights(
         project: list) -> list:  # Принимает оптимизированные проект, с расставленными работниами. Оптимизирует его по оставщимся двум параметрам и возвращает.
-    return [[[0, 120, '7332181498130530316', 'Аналитика'], [120, 360, "7332181498130530317", 'Разработка'],
-             [360, 480, "7332181498130530318", 'Тестирование'], [2000, "7332181498130530315"],
-             [2000, "7332176511673499649"], [1500, "7332183950556856321"], "7332181498130530315"],
-            [[120, 200, '7332181498130530312', 'Аналитика'], [200, 360, "7332181498130530313", 'Разработка'],
-             [360, 440, "7332181498130530314", 'Тестирование'], [2000, "7332176661559640067"],
-             [4000, "7332176618609967105"], [3000, "7332176618609967105"], "7332181498130530311"],
-            [[200, 240, '7332181498130530308', 'Аналитика'], [240, 320, "7332181498130530309", 'Разработка'],
-             [320, 360, "7332181498130530310", 'Тестирование'], [2000, "7332176661559640067"],
-             [4000, "7332176571803041799"], [1500, "7332183950556856321"], "7332181498130530307"]]
+    global time_index, money_index, resurces_index, dependencies
+    count_projects = len(project)
+    data_set = [deepcopy(project)]
+    project_moved = deepcopy(project)
+    for i in range(1, count_projects):
+        for j in range(count_projects):
+            if project_moved[i][j][0] > project_moved[i - 1][j][0] and project_moved[i][j][0] < project_moved[i - 1][j][
+                1]:
+                time = abs(project_moved[i][j][0] - project_moved[i - 1][j][1]) * time_index
+                time_dif = abs(project_moved[i][j][0] - project_moved[i - 1][j][1])
+                salary_1 = project_moved[i][j + count_projects][0]
+                salary_2 = project_moved[i - 1][j + count_projects][0]
+                salary = abs(salary_1 - salary_2) / 1000 * time_dif * money_index
+                resurce = resurces_index
+                if max(resurce, salary) > time:
+                    project_moved[i][j][1] += time_dif
+                    project_moved[i][j][0] = project_moved[i - 1][j][1]
+                    if salary_1 > salary_2:
+                        project_moved[i][j + count_projects][0] = salary_2
+                        project_moved[i][j + count_projects][1] = \
+                            project_moved[i - 1][j + count_projects][1]
+                        for k in range(j + 1, count_projects):
+                            dep_task_id = deepcopy(project_moved[i][k - 1][2])
+                            if dep_task_id in dependencies:
+                                if dependencies[dep_task_id] == project_moved[i][k][2]:
+                                    project_moved[i][k][0] += time_dif
+                                    project_moved[i][k][1] += time_dif
+                                    if project_moved[i - 1][k][0] <= project_moved[i][k][0]:
+                                        if project_moved[i][k + count_projects][0] < \
+                                                project_moved[i - 1][k + count_projects][0]:
+                                            project_moved[i - 1][k + count_projects][0] = \
+                                                project_moved[i][k + count_projects][0]
+                                            project_moved[i - 1][k + count_projects][1] = \
+                                                project_moved[i][k + count_projects][1]
+                                        else:
+                                            project_moved[i][k + count_projects][0] = \
+                                                project_moved[i - 1][k + count_projects][0]
+                                            project_moved[i][k + count_projects][1] = \
+                                                project_moved[i - 1][k + count_projects][1]
+                        # проверить на проектах, в которых больше трех задач
+                        for k in range(i + 1, count_projects):
+                            for h in range(j, len(project_moved[k]) - count_projects - 1):
+                                project_moved[k][h][0] += time_dif
+                                project_moved[k][h][1] += time_dif
+                    else:
+                        project_moved[i - 1][j + count_projects][0] = salary_1
+                        project_moved[i - 1][j + count_projects][1] = \
+                            project_moved[i][j + count_projects][0]
+                    data_set.append(deepcopy(project_moved))
+                else:
+                    continue
+            else:
+                continue
+    return choose_best_project(set_workers(data_set))
 
 
 def write_project_into_json(
@@ -297,8 +401,8 @@ if __name__ == '__main__':
     money_index, resurces_index, time_index = create_weights(input_values)
     data = load_input_json(str(input('введите название файла: ')))  # открыть, когда будет реализована функция
     project, resurces, calendars, dependencies, assignments = get_data_from_json(data)
-    max_working_hours = get_max_working_hours(calendars)  # пока не делаем
     optimized_by_time_project = optimization_by_time(project)
     optimized_by_time_and_money_project = set_workers(optimized_by_time_project)
     final_project = optimization_by_weights(optimized_by_time_and_money_project)
+    # print(final_project)
     write_project_into_json(final_project)
