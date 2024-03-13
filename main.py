@@ -239,9 +239,10 @@ def optimization_by_weights(
         project: list) -> list:  # Принимает оптимизированные проект, с расставленными работниами. Оптимизирует его по оставщимся двум параметрам и возвращает.
     global time_index, money_index, resurces_index, dependencies
     count_projects = (len(project[0]) - 1) // 2
-    data_set = [project]
+    data_set = []
+    project_moved = deepcopy(project)
     for i in range(1, count_projects):
-        project_moved = deepcopy(project)
+        data_set.append(project_moved)
         for j in range(count_projects):
             if project_moved[i][j][0] > project_moved[i - 1][j][0] and project_moved[i][j][0] < project_moved[i - 1][j][
                 1]:
@@ -251,7 +252,8 @@ def optimization_by_weights(
                 salary_2 = project_moved[i - 1][j + count_projects][0]
                 salary = abs(salary_1 - salary_2) / 1000 * time_dif * money_index
                 resurce = resurces_index
-                task_id = project_moved[i][j][2]
+                print(time, salary, resurce)
+                print(time_dif)
                 if max(resurce, salary) > time:
                     project_moved[i][j][1] += time_dif
                     project_moved[i][j][0] = project_moved[i - 1][j][1]
@@ -277,32 +279,20 @@ def optimization_by_weights(
                                             project_moved[i - 1][k + count_projects][0]
                                             project_moved[i][k + count_projects][1] = \
                                             project_moved[i - 1][k + count_projects][1]
-
-                        for h in range(i + 1, count_projects):
-                            intersection_task = [0, 0, '0', '0']
-                            for k in range(len(project_moved[h][:count_projects])):
-                                for l in range(len(project_moved[h][:count_projects])):
-                                    if project_moved[h][l + count_projects][1] == project_moved[i][k + count_projects][
-                                        1]:
-                                        print(project_moved[i][k][0], 'ddd')
-                                        if project_moved[h][l][0] > project_moved[i][j][0] and project_moved[h][l][1] < \
-                                                project_moved[i][k][1]:
-                                            print(project_moved[i][j][0], 'oooo')
-                                            intersection_task = project_moved[h][k]
-                                            intersection_time_dif = 0
-                                            if intersection_task[2] in dependencies:
-                                                if dependencies[intersection_task[2]] == project_moved[h][k][2]:
-                                                    p = 0
-
+                        # проверить на проектах, в которых больше трех задач
+                        for k in range(i + 1, count_projects):
+                            for h in range(j, len(project_moved[k])-count_projects-1):
+                                project_moved[k][h][0] += time_dif
+                                project_moved[k][h][1] += time_dif
                     else:
                         project_moved[i - 1][j + count_projects][0] = salary_1
                         project_moved[i - 1][j + count_projects][1] = \
                             project_moved[i][j + count_projects][0]
-                    print(project_moved)
                 else:
                     continue
             else:
                 continue
+    print(data_set)
 
 
 def write_project_into_json(
