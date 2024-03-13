@@ -293,10 +293,8 @@ def write_project_into_json(
 
 
 if __name__ == '__main__':
-    input_values = (input('Введите через пробел список параметров в одном из двух форматов: параметры (time, money, resource) по которым нужно оптимизировать календарный план в \
-                         в порядке приоритета (можно указать один, два или три параметра) или числовые коэффициенты от 0 до 2 в порядке деньги, ресурсы, время (нужно указать все три параметра): '))  # передать список параметров
+    input_values = (input('Введите через пробел список параметров в одном из двух форматов: параметры (time, money, resource) по которым нужно оптимизировать календарный план в порядке приоритета (можно указать один, два или три параметра) или числовые коэффициенты от 0 до 2 в порядке деньги, ресурсы, время (нужно указать все три параметра): '))  # передать список параметров
     money_index, resurces_index, time_index = create_weights(input_values)
-    print(money_index, resurces_index, time_index)
     data = load_input_json(str(input('введите название файла: ')))  # открыть, когда будет реализована функция
     project, resurces, calendars, dependencies, assignments = get_data_from_json(data)
     max_working_hours = get_max_working_hours(calendars)  # пока не делаем
