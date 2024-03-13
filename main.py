@@ -262,16 +262,78 @@ def optimization_by_time(
 
 
 def set_workers(
-        project: list) -> list:  # Приинимает проект, оптимизированные по времени. Назначает на него сотрудников, а именно расставляет в списке их зарплаты. Затем возвращает результат
-    return [[[0, 120, '7332181498130530316', 'Аналитика'], [120, 360, "7332181498130530317", 'Разработка'],
-             [360, 480, "7332181498130530318", 'Тестирование'], [2000, "7332181498130530315"],
-             [2000, "7332176511673499649"], [1500, "7332183950556856321"], "7332181498130530315"],
-            [[120, 200, '7332181498130530312', 'Аналитика'], [200, 360, "7332181498130530313", 'Разработка'],
-             [360, 440, "7332181498130530314", 'Тестирование'], [2000, "7332176661559640067"],
-             [4000, "7332176618609967105"], [3000, "7332176618609967105"], "7332181498130530311"],
-            [[200, 240, '7332181498130530308', 'Аналитика'], [240, 320, "7332181498130530309", 'Разработка'],
-             [320, 360, "7332181498130530310", 'Тестирование'], [2000, "7332176661559640067"],
-             [4000, "7332176571803041799"], [1500, "7332183950556856321"], "7332181498130530307"]]
+        project: list, resurces: list) -> list:  # Приинимает проект, оптимизированные по времени. Назначает на него сотрудников, а именно расставляет в списке их зарплаты. Затем возвращает результат
+
+    dct_project = {'Аналитика': [], 'Тестирование': [], 'Разработка': []}
+    dct_resources = {'Аналитика': [], 'Тестирование': [], 'Разработка': []}
+
+    cnt = 0
+    res_project = []
+    project_id = []
+    res_dct = dict()
+    for i in project:
+        res_project.append([])
+        for j in i:
+            if len(j) == 4:
+                res_project[cnt].append(j)
+            if j[-1] in dct_project:
+                dct_project[j[-1]].append([j[1] - j[0], j[0], j[1], j[2]])
+                res_dct[j[2]] = 0
+        project_id.append(i[-1])
+        cnt += 1
+    for key in resurces:
+        if key['projectRoleId'] == 'tester':
+            key_dct = 'Тестирование'
+        elif key['projectRoleId'] == 'analyst':
+            key_dct = 'Аналитика'
+        else:
+            key_dct = 'Разработка'
+        dct_resources[key_dct].append([key['salary'], key['id']])
+    for keys in dct_resources:
+        dct_resources[keys] = sorted(dct_resources[keys], key=lambda x: x[0])
+
+    for key, value in dct_project.items():
+        lst = sorted(value, key=lambda x: x[1])[::-1]
+        res_lst = []
+        while len(lst) > 0:
+            tmp_lst = []
+            tmp_lst.append([lst[0][0], lst[0].copy()])
+            for indx in range(1, len(lst)):
+                indx_for_max = -1
+                for indx_tmp in range(len(tmp_lst) - 1, -1, -1):
+                    if lst[indx][2] <= tmp_lst[indx_tmp][-1][1]:
+                        indx_for_max = indx_tmp
+                        break
+                if indx_for_max == -1:
+                    tmp_lst.append([lst[indx][0], lst[indx]])
+                else:
+                    maxi = max(tmp_lst[:indx_for_max + 1], key=lambda x: x[0]).copy()
+                    maxi[0] += lst[indx][0]
+                    maxi.append(lst[indx])
+                    tmp_lst.append(maxi.copy())
+            res_lst.append(max(tmp_lst, key=lambda x: x[0]).copy())
+            for i in res_lst[-1][1:]:
+                lst.remove(i)
+        res_lst = sorted(res_lst, key=lambda x: x[0])
+        cnt = 0
+        for i in res_lst:
+            res_dct[i[-1]] = dct_resources[key][cnt]
+            cnt += 1
+        for i in range(len(res_project)):
+            for j in res_project[i]:
+                res_project.append(res_dct[j[-2]])
+    for i in range(len(res_project)):
+        res_project[i].append(project_id[i])
+    return res_project
+     # return [[[0, 120, '7332181498130530316', 'Аналитика'], [120, 360, "7332181498130530317", 'Разработка'],
+     #         [360, 480, "7332181498130530318", 'Тестирование'], [2000, "7332181498130530315"],
+     #         [2000, "7332176511673499649"], [1500, "7332183950556856321"], "7332181498130530315"],
+     #        [[120, 200, '7332181498130530312', 'Аналитика'], [200, 360, "7332181498130530313", 'Разработка'],
+     #         [360, 440, "7332181498130530314", 'Тестирование'], [2000, "7332176661559640067"],
+     #         [4000, "7332176618609967105"], [3000, "7332176618609967105"], "7332181498130530311"],
+     #        [[200, 240, '7332181498130530308', 'Аналитика'], [240, 320, "7332181498130530309", 'Разработка'],
+     #         [320, 360, "7332181498130530310", 'Тестирование'], [2000, "7332176661559640067"],
+     #         [4000, "7332176571803041799"], [1500, "7332183950556856321"], "7332181498130530307"]]
 
 
 def optimization_by_weights(
@@ -299,6 +361,6 @@ if __name__ == '__main__':
     project, resurces, calendars, dependencies, assignments = get_data_from_json(data)
     max_working_hours = get_max_working_hours(calendars)  # пока не делаем
     optimized_by_time_project = optimization_by_time(project)
-    optimized_by_time_and_money_project = set_workers(optimized_by_time_project)
+    optimized_by_time_and_money_project = set_workers(optimized_by_time_project, resurces)
     final_project = optimization_by_weights(optimized_by_time_and_money_project)
     write_project_into_json(final_project)
