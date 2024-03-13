@@ -243,7 +243,6 @@ def optimization_by_weights(
     for i in range(1, count_projects):
         project_moved = deepcopy(project)
         for j in range(count_projects):
-            print(project_moved[i][j][0], project_moved[i - 1][j][1])
             if project_moved[i][j][0] > project_moved[i - 1][j][0] and project_moved[i][j][0] < project_moved[i - 1][j][
                 1]:
                 time = abs(project_moved[i][j][0] - project_moved[i - 1][j][1]) * time_index
@@ -254,30 +253,46 @@ def optimization_by_weights(
                 resurce = resurces_index
                 task_id = project_moved[i][j][2]
                 if max(resurce, salary) > time:
-                    project_moved[i][j][1] += project_moved[i][j][1] - project_moved[i][j][0]
+                    project_moved[i][j][1] += time_dif
                     project_moved[i][j][0] = project_moved[i - 1][j][1]
                     if salary_1 > salary_2:
                         project_moved[i][j + count_projects][0] = salary_2
                         project_moved[i][j + count_projects][1] = \
                             project_moved[i - 1][j + count_projects][1]
-                        for k in project_moved[i][j + 1:count_projects]:
-                            if task_id in dependencies:
-                                if dependencies[task_id] == k[2]:
-                                    k[0] += time_dif
-                                    k[1] += time_dif
-                        for h in range(i+1, count_projects):
+                        for k in range(j+1, count_projects):
+                            dep_task_id = project_moved[i][k-1][2]
+                            if dep_task_id in dependencies:
+                                if dependencies[dep_task_id] == project_moved[i][k][2]:
+                                    project_moved[i][k][0] += time_dif
+                                    project_moved[i][k][1] += time_dif
+                                    if project_moved[i - 1][k][0] <= project_moved[i][k][0]:
+                                        if project_moved[i][k + count_projects][0] < \
+                                                project_moved[i - 1][k + count_projects][0]:
+                                            project_moved[i - 1][k + count_projects][0] = \
+                                            project_moved[i][k + count_projects][0]
+                                            project_moved[i - 1][k + count_projects][1] = \
+                                            project_moved[i][k + count_projects][1]
+                                        else:
+                                            project_moved[i][k + count_projects][0] = \
+                                            project_moved[i - 1][k + count_projects][0]
+                                            project_moved[i][k + count_projects][1] = \
+                                            project_moved[i - 1][k + count_projects][1]
+
+                        for h in range(i + 1, count_projects):
                             intersection_task = [0, 0, '0', '0']
                             for k in range(len(project_moved[h][:count_projects])):
-                                print(project_moved[h][k + count_projects][1], project_moved[i][k + count_projects])
-                                if project_moved[h][k + count_projects][1] == project_moved[i][k + count_projects][1]:
-                                    print(project_moved[i][k][0], 'ddd')
-                                    if project_moved[h][k][0] > project_moved[i][j][0] and project_moved[h][k][1] < project_moved[i][k][1]:
-                                        print(project_moved[i][j][0], 'oooo')
-                                        intersection_task = project_moved[h][k]
-                                        intersection_time_dif = 0
-                                        if intersection_task[2] in dependencies:
-                                            if dependencies[intersection_task[2]] == project_moved[h][k][2]:
-                                                p=0
+                                for l in range(len(project_moved[h][:count_projects])):
+                                    if project_moved[h][l + count_projects][1] == project_moved[i][k + count_projects][
+                                        1]:
+                                        print(project_moved[i][k][0], 'ddd')
+                                        if project_moved[h][l][0] > project_moved[i][j][0] and project_moved[h][l][1] < \
+                                                project_moved[i][k][1]:
+                                            print(project_moved[i][j][0], 'oooo')
+                                            intersection_task = project_moved[h][k]
+                                            intersection_time_dif = 0
+                                            if intersection_task[2] in dependencies:
+                                                if dependencies[intersection_task[2]] == project_moved[h][k][2]:
+                                                    p = 0
 
                     else:
                         project_moved[i - 1][j + count_projects][0] = salary_1
