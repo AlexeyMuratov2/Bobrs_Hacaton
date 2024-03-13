@@ -2,94 +2,112 @@ import json
 import re
 from copy import deepcopy
 
-
-def create_weights(optimization_param: list):  # возвращает три переменные - веса. В порядке - время, деньги, ресурсы
+def create_weights(input_optimization_param: list):  # возвращает три переменные - веса. В порядке - деньги, ресурсы, время
     dict_of_params = {'time': 0, 'money': 0, 'resource': 0}
+    optimization_param = list(input_optimization_param.split())
+    for i in range(len(optimization_param)):
+       try:
+          optimization_param[i] = float(optimization_param[i])
+       except:
+          pass
 
     if not (0 < len(optimization_param) < 4):
         raise Exception('incorrect input data format')
+    if not all(type(x) == type(optimization_param[0]) for x in optimization_param):
+         raise Exception('incorrect input data format')
     for temp in optimization_param:
-        if temp not in dict_of_params:
-            raise Exception('incorrect input data format')
-    if not (len(optimization_param) == len(set(optimization_param))):
-        raise Exception('incorrect input data format')
+        if type(temp) == str:
+            if temp not in dict_of_params or not (len(optimization_param) == len(set(optimization_param))):
+                raise Exception('incorrect input data format')
+        if type(temp) == float:
+            if not (0 <= temp <= 2):
+                raise Exception('incorrect input data format')
 
-    if len(optimization_param) == 1:
+    if len(optimization_param) == 1 and type(optimization_param[0]) == str:
         dict_of_params[optimization_param[
             0]] = 2  # коэффициент для значения, по которому идет оптимизация, в случае если передали одно значение
-    if len(optimization_param) == 2:
+    if len(optimization_param) == 2 and type(optimization_param[0]) == str:
         dict_of_params[optimization_param[
             0]] = 1.5  # коэффициент для 1-го значения, по которому идет оптимизация, в случае если передали два значения
         dict_of_params[optimization_param[
             1]] = 1  # коэффициент для 2-го значения, по которому идет оптимизация, в случае если передали два значения
-    if len(optimization_param) == 3:
+    if len(optimization_param) == 3 and type(optimization_param[0]) == str:
         dict_of_params[optimization_param[
             0]] = 1  # коэффициент для 1-го значения, по которому идет оптимизация, в случае если передали три значения
         dict_of_params[optimization_param[
             1]] = 0.6  # коэффициент для 2-го значения, по которому идет оптимизация, в случае если передали три значения
         dict_of_params[optimization_param[
             2]] = 0.4  # коэффициент для 3-го значения, по которому идет оптимизация, в случае если передали три значения
+    if all(type(x) == float for x in optimization_param):
+        if len(optimization_param) == 3:
+           return optimization_param[0], optimization_param[1], optimization_param[2]
+        else:
+           raise Exception('incorrect input data format')
 
-    return dict_of_params['time'], dict_of_params['money'], dict_of_params['resource']
+
+    return dict_of_params['money'], dict_of_params['resource'], dict_of_params['time']
 
 
 def load_input_json(file_name: str) -> dict:  # принимает название файла, возвращает его в виде словаря
-    with open('data_json.json', 'r', encoding='utf-8') as file:
+    with open(file_name, 'r', encoding='utf-8') as file:
         return json.load(file)
 
+    return data
 
 def projects(list_projects):
-    list_of_proj = []
 
-    for row in list_projects:
-        for values in row['rows']:
-            for child in values['children']:
-                for proj_data in child.keys():
+  list_of_proj = []
 
-                    if proj_data == 'children':
+  for row in list_projects:
+    for values in row['rows']:
+      for child in values['children']:
+        for proj_data in child.keys():
 
-                        for part_proj in child[proj_data]:
-                            parts_pr = []
-                            for items in part_proj.keys():
+          if proj_data == 'children':
 
-                                if items == 'name' or items == 'effort' or items == 'id' or items == 'parentId':
-                                    parts_pr.append(part_proj[items])
-                            list_of_proj.append(parts_pr)
+            for part_proj in child[proj_data]:
+              parts_pr = []
+              for items in part_proj.keys():
 
-    return list_of_proj
+                if items == 'name' or items == 'effort' or items == 'id' or items == 'parentId':
+                  parts_pr.append(part_proj[items])
+              list_of_proj.append(parts_pr)
 
+
+  return list_of_proj
 
 def depend(list_depend):
-    depend_list = []
-    for line in list_depend:
-        if 'rows' in line:
-            for item in line['rows']:
-                depend = []
-                for key in item.keys():
-                    if key == 'from' or key == 'to':
-                        depend.append(item[key])
-                depend_list.append(depend)
-    return depend_list
 
+  depend_list = []
+  for line in list_depend:
+    if 'rows' in line:
+      for item in line['rows']:
+        depend = []
+        for key in item.keys():
+          if key == 'from' or key == 'to':
+            depend.append(item[key])
+        depend_list.append(depend)
+  return depend_list
 
 def resources(list_workers):
-    workers = []
 
-    for line in list_workers:
-        if 'rows' in line:
-            for item in line['rows']:
-                worker = {}
-                for key in item.keys():
-                    if key == 'projectRoleId' or key == 'id':
-                        worker[key] = item[key]
-                    elif key == 'name':
-                        match = re.search(r'\((\d+)\D', str(item[key]))
+  workers = []
 
-                        if match:
-                            worker['salary'] = int(match.group(1))
+  for line in list_workers:
+    if 'rows' in line:
+      for item in line['rows']:
+        worker = {}
+        for key in item.keys():
+          if key == 'projectRoleId' or key == 'id':
+            worker[key] = item[key]
+          elif key == 'name':
+            match = re.search(r'\((\d+)\D', str(item[key]))
 
-                workers.append(worker)
-    return workers
+            if match:
+              worker['salary'] = int(match.group(1))
+
+        workers.append(worker)
+  return workers
 
 
 def events_dis(list_events):
@@ -106,7 +124,6 @@ def events_dis(list_events):
                 events.append(event)
     return events
 
-
 def search_id(id, time, projects_final, depend_dict):
     for project in projects_final:
         for item in project:
@@ -120,6 +137,7 @@ def search_id(id, time, projects_final, depend_dict):
 
 def get_data_from_json(
         project_data: dict):  # принимает json в виде словаря. Возвращает данные о проекте, данные о сотрудниках, календарь, зависимости, связи задач и разработчиков. Именно в таком порядке
+
     list_projects = []
     list_people = []
     list_events = []
@@ -336,15 +354,18 @@ def write_project_into_json(
     pass
 
 
+
+
+
 if __name__ == '__main__':
-    input_values = ['money']  # передать список параметров
-    time_index, money_index, resurces_index = create_weights(input_values)
+    input_values = (input('Введите через пробел список параметров в одном из двух форматов: параметры (time, money, resource) по которым нужно оптимизировать календарный план в \
+                         в порядке приоритета (можно указать один, два или три параметра) или числовые коэффициенты от 0 до 2 в порядке деньги, ресурсы, время (нужно указать все три параметра): '))  # передать список параметров
+    money_index, resurces_index, time_index = create_weights(input_values)
+    print(money_index, resurces_index, time_index)
     data = load_input_json(str(input('введите название файла: ')))  # открыть, когда будет реализована функция
     project, resurces, calendars, dependencies, assignments = get_data_from_json(data)
     max_working_hours = get_max_working_hours(calendars)  # пока не делаем
     optimized_by_time_project = optimization_by_time(project)
     optimized_by_time_and_money_project = set_workers(optimized_by_time_project)
     final_project = optimization_by_weights(optimized_by_time_and_money_project)
-    print(final_project)
     write_project_into_json(final_project)
-    print(calendars)
