@@ -235,14 +235,48 @@ def set_workers(
              [4000, "7332176571803041799"], [1500, "7332183950556856321"], "7332181498130530307"]]
 
 
+def choose_best_project(projects_list:list):
+    global time_index, money_index, resurces_index
+    time_index_set = []
+    money_index_set = []
+    resurces_index_set = []
+    count_projects = len(projects_list[0])
+    for i in range(len(projects_list)):
+        money = 0
+        time = 0
+        resurces_set = set()
+        for j in range(count_projects):
+            for k in range((len(projects_list[i][j])-1)//2):
+                print(projects_list[i][j][k])
+                money += (projects_list[i][j][k][1] - projects_list[i][j][k][0]) * projects_list[i][j][k+count_projects][0]
+                time = max(time, projects_list[i][j][k][1])
+                resurces_set.add(projects_list[i][j][k+count_projects][1])
+        print(len(resurces_set))
+        time_index_set.append(time)
+        money_index_set.append(money)
+        resurces_index_set.append(len(resurces_set))
+    best_option = 999999999999
+    best_option_id = 0
+    for i in range(len(time_index_set)):
+        index = (time_index_set[i]*time_index)+(money_index_set[i]*money_index)+(resurces_index_set[i]*1000*resurces_index)
+        if best_option > index:
+            best_option = index
+            best_option_id = i
+    return projects_list[best_option_id]
+
+
+
+
+
+
+
 def optimization_by_weights(
         project: list) -> list:  # Принимает оптимизированные проект, с расставленными работниами. Оптимизирует его по оставщимся двум параметрам и возвращает.
     global time_index, money_index, resurces_index, dependencies
-    count_projects = (len(project[0]) - 1) // 2
-    data_set = []
+    count_projects = len(project)
+    data_set = [deepcopy(project)]
     project_moved = deepcopy(project)
     for i in range(1, count_projects):
-        data_set.append(project_moved)
         for j in range(count_projects):
             if project_moved[i][j][0] > project_moved[i - 1][j][0] and project_moved[i][j][0] < project_moved[i - 1][j][
                 1]:
@@ -288,11 +322,13 @@ def optimization_by_weights(
                         project_moved[i - 1][j + count_projects][0] = salary_1
                         project_moved[i - 1][j + count_projects][1] = \
                             project_moved[i][j + count_projects][0]
+                    data_set.append(deepcopy(project_moved))
                 else:
                     continue
             else:
                 continue
-    print(data_set)
+    return choose_best_project(data_set)
+    #return choose_best_project(set_workers(data_set))
 
 
 def write_project_into_json(
@@ -309,4 +345,6 @@ if __name__ == '__main__':
     optimized_by_time_project = optimization_by_time(project)
     optimized_by_time_and_money_project = set_workers(optimized_by_time_project)
     final_project = optimization_by_weights(optimized_by_time_and_money_project)
+    print(final_project)
     write_project_into_json(final_project)
+    print(calendars)
