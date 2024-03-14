@@ -249,6 +249,18 @@ def bubble_sort_2d(arr):
       if not swapped:
         break
 
+
+def bubble_sort_3d(arr):
+    n = len(arr)
+    for i in range(n):
+        swapped = False
+        for j in range(0, n-i-1):
+            if arr[j][0][0] > arr[j+1][0][0]:
+                arr[j], arr[j+1] = arr[j+1], arr[j]
+                swapped = True
+        if not swapped:
+            break
+
 def optimization_by_time(projects):
     global resurces, dependencies
     rows = {}
@@ -347,10 +359,10 @@ def optimization_by_time(projects):
               counter += 1
               dep[p[1]] = 0
               sucsess.append(0)
-        #print(sumi)
 
     mx_time = max(sumi)
-    return projects[::-1]
+    bubble_sort_3d(projects)
+    return projects
 
 
 
@@ -450,7 +462,6 @@ def choose_best_project(projects_list: list):
         if best_option > index:
             best_option = index
             best_option_id = i
-    print(projects_list[best_option_id])
     return projects_list[best_option_id], time_index_set[best_option_id]
 
 
