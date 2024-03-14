@@ -1,6 +1,8 @@
 import json
 import re
+import copy
 from copy import deepcopy
+
 from datetime import *
 
 
@@ -222,17 +224,134 @@ def get_data_from_json(
     return projects_final, list_people, dict_calendar, depend_dict, list_events_out
 
 
-def optimization_by_time(
-        project: list) -> list:  # Принимает данные о входном проект, оптимизирует их и возвращает (не вызывать, если вес time = 0)
-    return [[[0, 120, '7332181498130530316', 'Аналитика'], [120, 360, "7332181498130530317", 'Разработка'],
-             [360, 480, "7332181498130530318", 'Тестирование'], [2000, "7332176661559640067"],
-             [2000, "7332176511673499649"], [1500, "7332183950556856321"], "7332181498130530315"],
-            [[120, 200, '7332181498130530312', 'Аналитика'], [200, 360, "7332181498130530313", 'Разработка'],
-             [360, 440, "7332181498130530314", 'Тестирование'], [2000, "7332176661559640067"],
-             [4000, "7332176618609967105"], [3000, "7332176618609967105"], "7332181498130530311"],
-            [[200, 240, '7332181498130530308', 'Аналитика'], [240, 320, "7332181498130530309", 'Разработка'],
-             [320, 360, "7332181498130530310", 'Тестирование'], [2000, "7332176661559640067"],
-             [4000, "7332176571803041799"], [1500, "7332183950556856321"], "7332181498130530307"]]
+
+
+def isready_notvariable(rows, dep, i, j):
+  if rows[i][j][1] not in dep.values():
+    #print(rows[i][j][1])
+    #print(dependensis.values())
+    return True
+  else:
+    return False
+
+def bubble_sort_2d(arr):
+    n = len(arr)
+    for i in range(n):
+      # Флаг, который указывает, были ли обмены на этой итерации
+      swapped = False
+      for j in range(0, n - i - 1):
+        # Сравниваем пятые элементы подмассивов
+        if arr[j][4] < arr[j + 1][4]:
+          # Если текущий элемент больше следующего, меняем их местами
+          arr[j], arr[j + 1] = arr[j + 1], arr[j]
+          swapped = True
+      # Если на этой итерации не было ни одного обмена, значит массив уже отсортирован
+      if not swapped:
+        break
+
+def optimization_by_time(projects):
+    global resurces, dependencies
+    rows = {}
+    workers = {}
+    dep = dependencies
+    sumi = [0 for i in range(len(projects))]
+    sum_moment = [0 for i in range(len(projects))]
+    len_proj = []
+    tasks = 0
+    #print(dep)
+    #print(projects)
+    for i in range (len(projects)):
+      for j in range(len(projects[i])):
+        if len(projects[i][j]) != 4:
+          pass
+        else:
+          sumi[i] += projects[i][j][1] - projects[i][j][0]
+          if projects[i][j][3] in rows:
+            rows[projects[i][j][3]].append([projects[i][j][1] - projects[i][j][0], projects[i][j][2], projects[i][j][3], i])
+            #print(i)
+          else:
+            rows[projects[i][j][3]] = [[projects[i][j][1] - projects[i][j][0], projects[i][j][2], projects[i][j][3], i]]
+          tasks += 1
+    #print(rows)
+    timer = []
+    for i in range(len(resurces)):
+      if resurces[i]['projectRoleId'] in workers:
+        workers[resurces[i]['projectRoleId']] += 1
+        timer.append([resurces[i]['projectRoleId'], 0])
+      else:
+        workers[resurces[i]['projectRoleId']] = 1
+        timer.append([resurces[i]['projectRoleId'], 0])
+    desk = {'Аналитика': 'analyst', 'Разработка': 'developer', 'Тестирование': 'tester'}
+    time_sum = sumi
+    sucsess = []
+    #print(sucsess,tasks)
+    while len(sucsess) != tasks:
+      saves = {}
+      for i in rows:
+        for j in range(len(rows[i])):
+          if isready_notvariable(rows, dep, i, j) :
+            #print(rows[i][j])
+            #print(rows[i][j])
+            if i in saves:
+              rows[i][j].append(sumi[rows[i][j][3]])
+              saves[i].append(rows[i][j].copy())
+            else:
+              rows[i][j].append(sumi[rows[i][j][3]])
+              saves[i] = [rows[i][j].copy()]
+      #print(saves)
+      saves_difference = {}
+      for l in saves:
+        #print(l)
+        if l in saves_difference:
+          #print()
+          saves_difference[l].append(saves[l])
+        else:
+          saves_difference[l] = saves[l]
+      #print(saves_difference)
+      for l in saves_difference:
+        saves_new = saves_difference[l]
+        #print(saves_new)
+        #print(sumi)
+        bubble_sort_2d(saves_new )
+        #print(saves_new)
+        counter = 0
+        while len(saves_new) > counter:
+          #print(saves_new)
+          for p in range(len(saves_new)-1):
+              if sum_moment[saves_new[p][3]] - sum_moment[saves_new[p + 1][3]] > saves_new[p + 1][3]:
+                  sucsess.append(0)
+                  #print(projects, saves_new[p][3])
+                  rows[saves_new[p][2]].remove(saves_new[p])
+                  saves_new.remove(saves_new[p])
+          for p in saves_new:
+              #print(p)
+              timer_time = []
+              timer_index = []
+              for k in timer:
+                    if k[0] == desk[p[2]]:
+                        timer_time.append(k[1])
+                        timer_index.append(timer.index(k))
+                #print(k[0],desk[l])
+              #print(p )
+              for i in range(len(projects[p[3]])):
+                  if len(projects[p[3]][i]) == 4:
+                    #print(projects[p[3]][i][0])
+                    projects[p[3]][i][0] += min(timer_time)
+                    projects[p[3]][i][1] += min(timer_time)
+              sumi[p[3]] += min(timer_time)
+              sum_moment[p[3]] +=  min(timer_time) + p[0]
+              #projects[]
+              #print(sum_moment)
+              timer[timer_index[timer_time.index(min(timer_time))]][1] += p[0]
+              rows[p[2]].remove(p)
+              counter += 1
+              dep[p[1]] = 0
+              sucsess.append(0)
+        #print(sumi)
+
+    mx_time = max(sumi)
+    return projects[::-1]
+
 
 
 def set_workers(
@@ -327,10 +446,11 @@ def choose_best_project(projects_list: list):
     best_option_id = 0
     for i in range(len(time_index_set)):
         index = (time_index_set[i] * time_index) + (money_index_set[i] * money_index) + (
-                    resurces_index_set[i] * 1000 * resurces_index)
+                resurces_index_set[i] * 1000 * resurces_index)
         if best_option > index:
             best_option = index
             best_option_id = i
+    print(projects_list[best_option_id])
     return projects_list[best_option_id], time_index_set[best_option_id]
 
 
@@ -408,9 +528,9 @@ def write_project_into_json(optData: list):
 
     counterDates = 0
     dates = {}
-    startDate = datetime.strptime(data["project"]["startDate"]+'T00:00:00', "%Y-%m-%dT%H:%M:%S")
+    startDate = datetime.strptime(data["project"]["startDate"] + 'T00:00:00', "%Y-%m-%dT%H:%M:%S")
     durations = sorted(durations)
-    n=0
+    n = 0
     ldurations = list(durations)
     for i in calendars["rows"][0]["intervals"]:
         if type(i["startDate"]) == str:
@@ -418,20 +538,20 @@ def write_project_into_json(optData: list):
             if startDate <= weekendDate:
                 while weekendDate > startDate:
                     if datetime.weekday(startDate) != 5 and datetime.weekday(startDate) != 6:
-                        counterDates +=8
-                        if n+1<=len(ldurations):
+                        counterDates += 8
+                        if n + 1 <= len(ldurations):
                             if counterDates >= ldurations[n]:
                                 dates[ldurations[n]] = str(startDate + timedelta(hours=9))
-                                n+=1
+                                n += 1
                     startDate += timedelta(days=1)
                 if startDate == weekendDate:
                     if i["isWorking"] == True:
-                        counterDates+= (((datetime.strptime(i["endDate"], "%Y-%m-%dT%H:%M:%S") - datetime.strptime(i["startDate"], "%Y-%m-%dT%H:%M:%S")).total_seconds()/60)/60)
+                        counterDates += (((datetime.strptime(i["endDate"], "%Y-%m-%dT%H:%M:%S") - datetime.strptime(
+                            i["startDate"], "%Y-%m-%dT%H:%M:%S")).total_seconds() / 60) / 60)
                         for j in durations:
                             if counterDates >= j:
                                 dates[j] = str(startDate + timedelta(hours=9))
                 startDate += timedelta(days=1)
-
 
     esum = 0
     for prj in optData:
@@ -444,8 +564,8 @@ def write_project_into_json(optData: list):
                                 if i[0] == dur:
                                     j["startDate"] = dat
                                 elif i[1] == dur:
-                                    j["endDate"] = str(datetime.strptime(dat, "%Y-%m-%d %H:%M:%S")+timedelta(hours=9))
-                                j["duration"] = int((i[1]-i[0])/8)
+                                    j["endDate"] = str(datetime.strptime(dat, "%Y-%m-%d %H:%M:%S") + timedelta(hours=9))
+                                j["duration"] = int((i[1] - i[0]) / 8)
                                 j["effort"] = (i[1] - i[0])
 
     ssdates = []
@@ -460,7 +580,7 @@ def write_project_into_json(optData: list):
         ssdates.append(min(sdates))
         x["startDate"] = str(min(sdates))
         x["endDate"] = str(max(edates))
-        x["duration"] = int(esum/8)
+        x["duration"] = int(esum / 8)
         x["effort"] = esum
 
     for x in data["tasks"]["rows"]:
@@ -469,21 +589,21 @@ def write_project_into_json(optData: list):
         x["duration"] = int(project_time / 8)
         x["effort"] = project_time
 
-    counter=0
+    counter = 0
     for i in data["assignments"]["rows"]:
         i["event"] = projects[counter]
         i["resource"] = workers[counter]
-        counter+=1
+        counter += 1
 
-    #print(data)
-
+    # print(data)
 
     with open("exitData.json", 'w', encoding='utf-8') as file:
         json.dump(data, file, ensure_ascii=False)
 
 
 if __name__ == '__main__':
-    input_values = (input('Введите через пробел список параметров в одном из двух форматов: параметры (time, money, resource) по которым нужно оптимизировать календарный план в порядке приоритета (можно указать один, два или три параметра) или числовые коэффициенты от 0 до 2 в порядке деньги, ресурсы, время (нужно указать все три параметра): '))  # передать список параметров
+    input_values = (input(
+        'Введите через пробел список параметров в одном из двух форматов: параметры (time, money, resource) по которым нужно оптимизировать календарный план в порядке приоритета (можно указать один, два или три параметра) или числовые коэффициенты от 0 до 2 в порядке деньги, ресурсы, время (нужно указать все три параметра): '))  # передать список параметров
     money_index, resurces_index, time_index = create_weights(input_values)
     data = load_input_json(str(input('введите название файла: ')))  # открыть, когда будет реализована функция
     project, resurces, calendars, dependencies, assignments = get_data_from_json(data)
