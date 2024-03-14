@@ -1,6 +1,7 @@
 import json
 import re
 from copy import deepcopy
+from datetime import *
 
 
 def create_weights(
@@ -330,11 +331,11 @@ def choose_best_project(projects_list: list):
         if best_option > index:
             best_option = index
             best_option_id = i
-    return projects_list[best_option_id]
+    return projects_list[best_option_id], time_index_set[best_option_id]
 
 
 def optimization_by_weights(
-        project: list) -> list:  # Принимает оптимизированные проект, с расставленными работниами. Оптимизирует его по оставщимся двум параметрам и возвращает.
+        project: list):  # Принимает оптимизированные проект, с расставленными работниами. Оптимизирует его по оставщимся двум параметрам и возвращает.
     global time_index, money_index, resurces_index, dependencies
     count_projects = len(project)
     data_set = [deepcopy(project)]
@@ -391,9 +392,94 @@ def optimization_by_weights(
     return choose_best_project(set_workers(data_set))
 
 
-def write_project_into_json(
-        project: list) -> None:  # Принимает проект и записывает новые данные в словарь data. Записывает его в файл и выводит сообщением общие затраты, время и ресурсы.
-    pass
+def write_project_into_json(optData: list):
+    global data, project_time
+    projects = []
+    workers = []
+    durations = set()
+    for prj in optData:
+        for i in prj:
+            if len(i) == 4:
+                projects.append(i[2])
+                durations.add(i[0])
+                durations.add(i[1])
+            elif len(i) == 2:
+                workers.append(i[1])
+
+    counterDates = 0
+    dates = {}
+    startDate = datetime.strptime(data["project"]["startDate"]+'T00:00:00', "%Y-%m-%dT%H:%M:%S")
+    durations = sorted(durations)
+    n=0
+    ldurations = list(durations)
+    for i in calendars["rows"][0]["intervals"]:
+        if type(i["startDate"]) == str:
+            weekendDate = datetime.strptime(i["startDate"], "%Y-%m-%dT%H:%M:%S")
+            if startDate <= weekendDate:
+                while weekendDate > startDate:
+                    if datetime.weekday(startDate) != 5 and datetime.weekday(startDate) != 6:
+                        counterDates +=8
+                        if n+1<=len(ldurations):
+                            if counterDates >= ldurations[n]:
+                                dates[ldurations[n]] = str(startDate + timedelta(hours=9))
+                                n+=1
+                    startDate += timedelta(days=1)
+                if startDate == weekendDate:
+                    if i["isWorking"] == True:
+                        counterDates+= (((datetime.strptime(i["endDate"], "%Y-%m-%dT%H:%M:%S") - datetime.strptime(i["startDate"], "%Y-%m-%dT%H:%M:%S")).total_seconds()/60)/60)
+                        for j in durations:
+                            if counterDates >= j:
+                                dates[j] = str(startDate + timedelta(hours=9))
+                startDate += timedelta(days=1)
+
+
+    esum = 0
+    for prj in optData:
+        for i in prj:
+            for x in data["tasks"]["rows"][0]["children"]:
+                for j in x["children"]:
+                    if len(i) == 4:
+                        if i[2] == j["id"]:
+                            for dur, dat in dates.items():
+                                if i[0] == dur:
+                                    j["startDate"] = dat
+                                elif i[1] == dur:
+                                    j["endDate"] = str(datetime.strptime(dat, "%Y-%m-%d %H:%M:%S")+timedelta(hours=9))
+                                j["duration"] = int((i[1]-i[0])/8)
+                                j["effort"] = (i[1] - i[0])
+
+    ssdates = []
+    for x in data["tasks"]["rows"][0]["children"]:
+        sdates = []
+        edates = []
+        esum = 0
+        for j in x["children"]:
+            sdates.append(datetime.strptime(j["startDate"], "%Y-%m-%d %H:%M:%S"))
+            edates.append(datetime.strptime(j["endDate"], "%Y-%m-%d %H:%M:%S"))
+            esum += int(j["effort"])
+        ssdates.append(min(sdates))
+        x["startDate"] = str(min(sdates))
+        x["endDate"] = str(max(edates))
+        x["duration"] = int(esum/8)
+        x["effort"] = esum
+
+    for x in data["tasks"]["rows"]:
+        x["startDate"] = str(min(ssdates))
+        x["endDate"] = str(max(edates))
+        x["duration"] = int(project_time / 8)
+        x["effort"] = project_time
+
+    counter=0
+    for i in data["assignments"]["rows"]:
+        i["event"] = projects[counter]
+        i["resource"] = workers[counter]
+        counter+=1
+
+    #print(data)
+
+
+    with open("exitData.json", 'w', encoding='utf-8') as file:
+        json.dump(data, file, ensure_ascii=False)
 
 
 if __name__ == '__main__':
@@ -403,6 +489,7 @@ if __name__ == '__main__':
     project, resurces, calendars, dependencies, assignments = get_data_from_json(data)
     optimized_by_time_project = optimization_by_time(project)
     optimized_by_time_and_money_project = set_workers(optimized_by_time_project)
-    final_project = optimization_by_weights(optimized_by_time_and_money_project)
+    final_project, project_time = optimization_by_weights(optimized_by_time_and_money_project)
     # print(final_project)
+
     write_project_into_json(final_project)
